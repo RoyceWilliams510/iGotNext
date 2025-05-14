@@ -34,12 +34,16 @@ interface Game {
 
 interface GameListProps {
   games?: Game[];
-  onGameSelect?: (game: Game) => void;
+  onGameSelect?: (gameId: string) => void;
+  onFilterChange?: (newFilters: any) => void;
+  compact?: boolean;
 }
 
 const GameList = ({
   games = defaultGames,
   onGameSelect = () => {},
+  onFilterChange = () => {},
+  compact = false
 }: GameListProps) => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [skillLevel, setSkillLevel] = useState<string>("");
@@ -141,7 +145,7 @@ const GameList = ({
                   <GameListItem
                     key={game.id}
                     game={game}
-                    onSelect={() => onGameSelect(game)}
+                    onSelect={() => onGameSelect(game.id)}
                   />
                 ))
               ) : (
@@ -160,7 +164,7 @@ const GameList = ({
                   <GameGridItem
                     key={game.id}
                     game={game}
-                    onSelect={() => onGameSelect(game)}
+                    onSelect={() => onGameSelect(game.id)}
                   />
                 ))
               ) : (

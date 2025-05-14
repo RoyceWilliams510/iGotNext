@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Game } from "@/types/game";
+import { Court } from "@/types/court";
 
 interface Player {
   id: string;
@@ -26,54 +28,28 @@ interface Player {
   position?: string;
 }
 
-interface Court {
-  id: string;
-  name: string;
-  address: string;
-  amenities: string[];
-  surfaceType: string;
-  rating: number;
-  imageUrl?: string;
-}
+
 
 interface GameDetailProps {
-  gameId?: string;
+  game?: Game;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onRSVP?: (gameId: string, attending: boolean) => void;
+  court?: Court;
 }
 
 const GameDetail = ({
-  gameId = "1",
+  game,
   open = true,
   onOpenChange,
   onRSVP,
+  court,
 }: GameDetailProps) => {
   // Mock data - in a real app, this would be fetched based on gameId
   const [isAttending, setIsAttending] = useState(false);
 
-  const game = {
-    id: gameId,
-    title: "Saturday Morning Pickup",
-    date: new Date(2023, 6, 15, 10, 0),
-    playerLimit: 10,
-    playerCount: 6,
-    skillLevel: "Intermediate",
-    gameType: "Casual",
-    description:
-      "Regular weekend pickup game. All skill levels welcome but some experience preferred.",
-  };
+  console.log(game)
 
-  const court: Court = {
-    id: "101",
-    name: "Central Park Courts",
-    address: "123 Park Ave, New York, NY 10001",
-    amenities: ["Water Fountain", "Restrooms", "Lighting", "Seating"],
-    surfaceType: "Concrete",
-    rating: 4.5,
-    imageUrl:
-      "https://images.unsplash.com/photo-1505666287802-931dc83948e9?w=800&q=80",
-  };
 
   const players: Player[] = [
     {
@@ -123,7 +99,7 @@ const GameDetail = ({
   const handleRSVP = () => {
     setIsAttending(!isAttending);
     if (onRSVP) {
-      onRSVP(gameId, !isAttending);
+      onRSVP(game.id, !isAttending);
     }
   };
 
@@ -153,8 +129,7 @@ const GameDetail = ({
 
         <div className="relative w-full h-48 rounded-md overflow-hidden mb-4">
           <img
-            src={
-              court.imageUrl ||
+            src={court?.imageUrl ||  
               "https://images.unsplash.com/photo-1505666287802-931dc83948e9?w=800&q=80"
             }
             alt={court.name}
@@ -163,7 +138,7 @@ const GameDetail = ({
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <h3 className="text-white font-semibold">{court.name}</h3>
             <p className="text-white/90 text-sm flex items-center">
-              <MapPin className="w-3 h-3 mr-1" /> {court.address}
+              <MapPin className="w-3 h-3 mr-1" /> {game.location}
             </p>
           </div>
         </div>
@@ -297,7 +272,7 @@ const GameDetail = ({
 
         <DialogFooter className="sm:justify-between">
           <DialogClose asChild>
-            <Button variant="outline" className="gap-1">
+            <Button variant="outline" className="gap-1" onClick={() => onOpenChange?.(false)}>
               <X className="h-4 w-4" /> Close
             </Button>
           </DialogClose>

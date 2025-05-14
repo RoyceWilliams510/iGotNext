@@ -32,15 +32,17 @@ interface CreateGameFormProps {
   onSubmit?: (gameData: GameFormData) => void;
 }
 
-interface GameFormData {
+export interface GameFormData {
   title: string;
-  description: string;
+  description?: string;
   location: string;
+  courtName: string;
+  courtType: "Indoor" | "Outdoor";
   date: Date | undefined;
   time: string;
   playerLimit: number;
-  gameType: string;
-  skillLevel: string;
+  skillLevel: "Beginner" | "Intermediate" | "Advanced";
+  gameType: "Casual" | "Competitive";
 }
 
 const CreateGameForm: React.FC<CreateGameFormProps> = ({
@@ -51,11 +53,13 @@ const CreateGameForm: React.FC<CreateGameFormProps> = ({
     title: "",
     description: "",
     location: "",
+    courtName: "",
+    courtType: "Outdoor",
     date: undefined,
     time: "",
     playerLimit: 10,
-    gameType: "casual",
-    skillLevel: "all",
+    gameType: "Casual",
+    skillLevel: "Intermediate"
   });
 
   const handleInputChange = (

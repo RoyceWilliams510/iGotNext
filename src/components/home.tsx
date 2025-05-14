@@ -2,34 +2,27 @@ import React, { useState, useEffect } from "react";
 import GameMap from "./GameMap";
 import GameList from "./GameList";
 import GameDetail from "./GameDetail";
-import CreateGameForm from "./CreateGameForm";
+import CreateGameForm, { GameFormData } from "./CreateGameForm";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent } from "./ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { MapPin, Plus, Calendar, User, LogOut } from "lucide-react";
 import { useAuth } from "./auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { Game } from "@/types/game";
+import { Court } from "@/types/court";
+import { courtData } from "@/data/courts";
+import { gameData} from "@/data/games";
 
-interface Game {
-  id: string;
-  title: string;
-  date: Date;
-  time: string;
-  location: string;
-  court: string;
-  playerCount: number;
-  playerLimit: number;
-  skillLevel: "Beginner" | "Intermediate" | "Advanced";
-  gameType: "Casual" | "Competitive";
-  position: { lat: number; lng: number };
-}
+
 
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [activeTab, setActiveTab] = useState("map");
   const [filters, setFilters] = useState({
     date: null,
@@ -44,55 +37,28 @@ export default function Home() {
   const [isLoadingGames, setIsLoadingGames] = useState(true);
 
   // Mock data for games
-  // We'll keep the mock data for now, but in a real app we would fetch from Supabase
-  const [games, setGames] = useState<Game[]>([
-    {
-      id: "1",
-      title: "Saturday Morning Pickup",
-      date: new Date(2023, 5, 15),
-      time: "10:00 AM",
-      location: "Central Park Courts",
-      court: "Court 3",
-      playerCount: 6,
-      playerLimit: 10,
-      skillLevel: "Intermediate",
-      gameType: "Casual",
-      position: { lat: 40.785091, lng: -73.968285 },
-    },
-    {
-      id: "2",
-      title: "Competitive 3v3",
-      date: new Date(2023, 5, 16),
-      time: "6:00 PM",
-      location: "Brooklyn Bridge Park",
-      court: "Main Court",
-      playerCount: 4,
-      playerLimit: 6,
-      skillLevel: "Advanced",
-      gameType: "Competitive",
-      position: { lat: 40.7021, lng: -73.99659 },
-    },
-    {
-      id: "3",
-      title: "Beginner Friendly Game",
-      date: new Date(2023, 5, 17),
-      time: "4:00 PM",
-      location: "Riverside Park Courts",
-      court: "North Court",
-      playerCount: 3,
-      playerLimit: 10,
-      skillLevel: "Beginner",
-      gameType: "Casual",
-      position: { lat: 40.801138, lng: -73.972088 },
-    },
-  ]);
+  const [games, setGames] = useState<Game[]>(gameData);
+  const [courts, setCourts] = useState<Court[]>(courtData);
 
-  const handleGameSelect = (game: Game) => {
-    setSelectedGame(game);
-    setIsDetailOpen(true);
+  const handleGameSelect = (gameId: string) => {
+    const game = games.find(g => g.id === gameId);
+    const court = courts.find(c => c.id === game?.courtId);
+    if (game && court) {
+      setSelectedCourt(court);
+      setSelectedGame(game);
+      setIsDetailOpen(true);
+    }
   };
 
-  const handleCreateGame = (newGame: Game) => {
+  const handleCreateGame = (gameData: GameFormData) => {
+    const newGame: Game = {
+      ...gameData,
+      id: Math.random().toString(36).substr(2, 9),
+      playerCount: 1,
+      courtType: "Outdoor",
+      latitude: 37.7749,
+      longitude: -122.4194
+    };
     setGames([...games, newGame]);
     setIsCreateOpen(false);
   };
@@ -216,6 +182,8 @@ export default function Home() {
             <GameDetail
               game={selectedGame}
               onJoin={() => handleJoinGame(selectedGame.id)}
+              court={selectedCourt}
+              onOpenChange={setIsDetailOpen}
             />
           )}
         </DialogContent>
@@ -224,6 +192,7 @@ export default function Home() {
       {/* Create Game Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[600px]">
+          <DialogTitle className = "hidden"></DialogTitle>
           <CreateGameForm onSubmit={handleCreateGame} />
         </DialogContent>
       </Dialog>
