@@ -1,4 +1,5 @@
 import { Game } from './game';
+import { Court } from './court';
 
 // Map-related types
 export interface MapPosition {
@@ -17,14 +18,16 @@ export interface MapMarker {
   position: MapPosition;
   title: string;
   color: string;
-  game: Game;
+  court: Court;
+  games: Game[];
 }
 
 // Component Props
-export interface GameMapProps {
+export interface CourtMapProps {
+  courts?: Court[];
   games?: Game[];
-  onGameSelect?: (gameId: string) => void;
-  selectedGame?: Game | null;
+  onCourtSelect?: (courtId: string) => void;
+  selectedCourt?: Court | null;
   center?: { lat: number; lng: number };
   zoom?: number;
   mapStyle?: any[];
@@ -32,7 +35,7 @@ export interface GameMapProps {
 
 // Marker Styles
 export interface MarkerStyle {
-  path: google.maps.SymbolPath;
+  path: google.maps.SymbolPath | string;
   fillColor: string;
   fillOpacity: number;
   strokeWeight: number;
@@ -56,13 +59,12 @@ export interface MapOptions {
 }
 
 // Info Window Content
-export interface InfoWindowContent {
-  title: string;
-  courtName: string;
-  date: string;
-  time: string;
-  playerCount: number;
-  playerLimit: number;
-  skillLevel: string;
-  gameType: string;
+export interface CourtInfoWindowContent {
+  name: string;
+  address: string;
+  rating: number;
+  surfaceType: string;
+  gamesCount: number;
+  amenities: string[];
+  imageUrl?: string;
 } 

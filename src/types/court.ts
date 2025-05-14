@@ -6,6 +6,6 @@ export interface Court {
     latitude: number;
     longitude: number;
     surfaceType: string;
-    rating: number;
+    rating?: number | 0;
     imageUrl?: string;
   }

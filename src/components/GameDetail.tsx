@@ -204,7 +204,7 @@ const GameDetail = ({
               <div>
                 <h4 className="font-medium mb-1">Amenities</h4>
                 <div className="flex flex-wrap gap-2">
-                  {court.amenities.map((amenity, index) => (
+                  {court.amenities?.map((amenity, index) => (
                     <Badge key={index} variant="outline">
                       {amenity}
                     </Badge>

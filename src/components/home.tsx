@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import GameMap from "./GameMap";
+import CourtMap from "./CourtMap";
 import GameList from "./GameList";
 import GameDetail from "./GameDetail";
+import CourtDetail from "./CourtDetail";
 import CreateGameForm, { GameFormData } from "./CreateGameForm";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
@@ -18,6 +20,7 @@ export default function Home() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCourtDetailOpen, setIsCourtDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("map");
   const [filters, setFilters] = useState({
@@ -75,7 +78,6 @@ export default function Home() {
   }, []);
 
   const handleGameSelect = (gameId: string) => {
-    console.log(games)
     const game = games.find(g => g.id === gameId);
     const court = courts.find(c => c.id === game?.courtId);
     if (game && court) {
@@ -85,37 +87,45 @@ export default function Home() {
     }
   };
 
+  const handleCourtSelect = (courtId: string) => {
+    const court = courts.find(c => c.id === courtId);
+    if (court) {
+      setSelectedCourt(court);
+      setIsCourtDetailOpen(true);
+    }
+  };
+
   const handleCreateGame = async (gameData: GameFormData) => {
-    // try {
-    //   const selectedCourt = courts.find(c => c.id === gameData.courtId);
-    //   if (!selectedCourt) throw new Error('Court not found');
+    try {
+      const selectedCourt = courts.find(c => c.id === gameData.courtId);
+      if (!selectedCourt) throw new Error('Court not found');
 
-    //   const newGame: Omit<Game, 'id'> = {
-    //     ...gameData,
-    //     playerCount: 1,
-    //     latitude: selectedCourt.latitude,
-    //     longitude: selectedCourt.longitude,
-    //     createdAt: new Date().toISOString(),
-    //     updatedAt: new Date().toISOString(),
-    //     creator_id: user?.id
-    //   };
+      const newGame = {
+        ...gameData,
+        date: gameData.date?.toISOString() || new Date().toISOString(),
+        playerCount: 1,
+        latitude: selectedCourt.latitude,
+        longitude: selectedCourt.longitude,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        creator_id: user?.id
+      };
 
-    //   const { data, error } = await supabase
-    //     .from('games')
-    //     .insert([newGame])
-    //     .select()
-    //     .single();
+      const { data, error } = await supabase
+        .from('games')
+        .insert([newGame])
+        .select()
+        .single();
 
-    //   if (error) throw error;
+      if (error) throw error;
 
-    //   // Add the new game to the state
-    //   setGames(prevGames => [...prevGames, { ...data, date: new Date(data.date) }]);
-    //   setIsCreateOpen(false);
-    // } catch (err) {
-    //   console.error('Error creating game:', err);
-    //   // You might want to show an error message to the user here
-    // }
-    return;
+      // Add the new game to the state
+      setGames(prevGames => [...prevGames, { ...data, date: new Date(data.date) }]);
+      setIsCreateOpen(false);
+    } catch (err) {
+      console.error('Error creating game:', err);
+      // You might want to show an error message to the user here
+    }
   };
 
   const handleJoinGame = async (gameId: string) => {
@@ -147,6 +157,11 @@ export default function Home() {
 
   const handleFilterChange = (newFilters: any) => {
     setFilters({ ...filters, ...newFilters });
+  };
+
+  // Get games for a specific court
+  const getCourtGames = (courtId: string) => {
+    return games.filter(game => game.courtId === courtId);
   };
 
   if (isLoading) {
@@ -218,15 +233,24 @@ export default function Home() {
           </TabsList>
 
           <TabsContent value="map" className="space-y-6">
-            <GameMap
+            <CourtMap
+              courts={courts}
               games={games}
-              onGameSelect={handleGameSelect}
-              selectedGame={selectedGame}
+              onCourtSelect={handleCourtSelect}
+              selectedCourt={selectedCourt}
             />
             <div className="mt-4">
-              <h2 className="text-xl font-semibold mb-4">Nearby Games</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                {selectedCourt 
+                  ? `Games at ${selectedCourt.name}`
+                  : "All Upcoming Games"
+                }
+              </h2>
               <GameList
-                games={games}
+                games={selectedCourt 
+                  ? getCourtGames(selectedCourt.id)
+                  : games
+                }
                 onGameSelect={handleGameSelect}
                 onFilterChange={handleFilterChange}
                 compact={true}
@@ -263,12 +287,27 @@ export default function Home() {
       {/* Game Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="sm:max-w-[600px]">
-          {selectedGame && (
+          {selectedGame && selectedCourt && (
             <GameDetail
               game={selectedGame}
               court={selectedCourt}
-              onJoin={() => handleJoinGame(selectedGame.id)}
               onOpenChange={setIsDetailOpen}
+              onRSVP={() => handleJoinGame(selectedGame.id)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Court Detail Dialog */}
+      <Dialog open={isCourtDetailOpen} onOpenChange={setIsCourtDetailOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          {selectedCourt && (
+            <CourtDetail
+              court={selectedCourt}
+              games={getCourtGames(selectedCourt.id)}
+              onGameSelect={handleGameSelect}
+              open={isCourtDetailOpen}
+              onOpenChange={setIsCourtDetailOpen}
             />
           )}
         </DialogContent>
