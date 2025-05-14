@@ -129,8 +129,7 @@ const GameDetail = ({
 
         <div className="relative w-full h-48 rounded-md overflow-hidden mb-4">
           <img
-            src={court?.imageUrl ||  
-              "https://images.unsplash.com/photo-1505666287802-931dc83948e9?w=800&q=80"
+            src={court?.imageUrl 
             }
             alt={court.name}
             className="w-full h-full object-cover"

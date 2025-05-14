@@ -13,16 +13,12 @@ import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { Game } from "@/types/game";
 import { Court } from "@/types/court";
-import { courtData } from "@/data/courts";
-import { gameData} from "@/data/games";
-
-
 
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [activeTab, setActiveTab] = useState("map");
   const [filters, setFilters] = useState({
     date: null,
@@ -33,14 +29,53 @@ export default function Home() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch games from Supabase when component mounts
-  const [isLoadingGames, setIsLoadingGames] = useState(true);
+  // State for games and courts
+  const [games, setGames] = useState<Game[]>([]);
+  const [courts, setCourts] = useState<Court[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for games
-  const [games, setGames] = useState<Game[]>(gameData);
-  const [courts, setCourts] = useState<Court[]>(courtData);
+  // Fetch games and courts from Supabase
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        // Fetch courts
+        const { data: courtsData, error: courtsError } = await supabase
+          .from('courts')
+          .select('*');
+
+        if (courtsError) throw new Error('Error fetching courts: ' + courtsError.message);
+
+        // Fetch games
+        const { data: gamesData, error: gamesError } = await supabase
+          .from('games')
+          .select('*');
+
+        if (gamesError) throw new Error('Error fetching games: ' + gamesError.message);
+
+        // Convert date strings to Date objects for games
+        const processedGames = gamesData.map(game => ({
+          ...game,
+          date: new Date(game.date)
+        }));
+
+        setCourts(courtsData);
+        setGames(processedGames);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Error fetching data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   const handleGameSelect = (gameId: string) => {
+    console.log(games)
     const game = games.find(g => g.id === gameId);
     const court = courts.find(c => c.id === game?.courtId);
     if (game && court) {
@@ -50,34 +85,85 @@ export default function Home() {
     }
   };
 
-  const handleCreateGame = (gameData: GameFormData) => {
-    const newGame: Game = {
-      ...gameData,
-      id: Math.random().toString(36).substr(2, 9),
-      playerCount: 1,
-      courtType: "Outdoor",
-      latitude: 37.7749,
-      longitude: -122.4194
-    };
-    setGames([...games, newGame]);
-    setIsCreateOpen(false);
+  const handleCreateGame = async (gameData: GameFormData) => {
+    // try {
+    //   const selectedCourt = courts.find(c => c.id === gameData.courtId);
+    //   if (!selectedCourt) throw new Error('Court not found');
+
+    //   const newGame: Omit<Game, 'id'> = {
+    //     ...gameData,
+    //     playerCount: 1,
+    //     latitude: selectedCourt.latitude,
+    //     longitude: selectedCourt.longitude,
+    //     createdAt: new Date().toISOString(),
+    //     updatedAt: new Date().toISOString(),
+    //     creator_id: user?.id
+    //   };
+
+    //   const { data, error } = await supabase
+    //     .from('games')
+    //     .insert([newGame])
+    //     .select()
+    //     .single();
+
+    //   if (error) throw error;
+
+    //   // Add the new game to the state
+    //   setGames(prevGames => [...prevGames, { ...data, date: new Date(data.date) }]);
+    //   setIsCreateOpen(false);
+    // } catch (err) {
+    //   console.error('Error creating game:', err);
+    //   // You might want to show an error message to the user here
+    // }
+    return;
   };
 
-  const handleJoinGame = (gameId: string) => {
-    setGames(
-      games.map((game) => {
-        if (game.id === gameId && game.playerCount < game.playerLimit) {
-          return { ...game, playerCount: game.playerCount + 1 };
-        }
-        return game;
-      }),
-    );
-    setIsDetailOpen(false);
+  const handleJoinGame = async (gameId: string) => {
+    try {
+      const gameToUpdate = games.find(g => g.id === gameId);
+      if (!gameToUpdate || gameToUpdate.playerCount >= gameToUpdate.playerLimit) return;
+
+      const { data, error } = await supabase
+        .from('games')
+        .update({ playerCount: gameToUpdate.playerCount + 1 })
+        .eq('id', gameId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update the game in state
+      setGames(prevGames =>
+        prevGames.map(game =>
+          game.id === gameId ? { ...data, date: new Date(data.date) } : game
+        )
+      );
+      setIsDetailOpen(false);
+    } catch (err) {
+      console.error('Error joining game:', err);
+      // You might want to show an error message to the user here
+    }
   };
 
   const handleFilterChange = (newFilters: any) => {
     setFilters({ ...filters, ...newFilters });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,9 +249,8 @@ export default function Home() {
               <p className="text-muted-foreground">
                 Games you've joined or created will appear here.
               </p>
-              {/* This would be filtered to show only the user's games */}
               <GameList
-                games={games.slice(0, 1)}
+                games={games.filter(game => game.creator_id === user?.id)}
                 onGameSelect={handleGameSelect}
                 onFilterChange={handleFilterChange}
                 compact={false}
@@ -181,8 +266,8 @@ export default function Home() {
           {selectedGame && (
             <GameDetail
               game={selectedGame}
-              onJoin={() => handleJoinGame(selectedGame.id)}
               court={selectedCourt}
+              onJoin={() => handleJoinGame(selectedGame.id)}
               onOpenChange={setIsDetailOpen}
             />
           )}
@@ -192,7 +277,7 @@ export default function Home() {
       {/* Create Game Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[600px]">
-          <DialogTitle className = "hidden"></DialogTitle>
+          <DialogTitle className="hidden"></DialogTitle>
           <CreateGameForm onSubmit={handleCreateGame} />
         </DialogContent>
       </Dialog>

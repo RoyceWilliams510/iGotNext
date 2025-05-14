@@ -9,17 +9,55 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
-    }
+      courts: {
+        Row: {
+          id: string;
+          name: string;
+          address: string;
+          amenities: string[];
+          latitude: number;
+          longitude: number;
+          surfaceType: string;
+          rating: number;
+          imageUrl?: string;
+        };
+        Insert: Omit<Database['public']['Tables']['courts']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['courts']['Row']>;
+      };
+      games: {
+        Row: {
+          id: string;
+          title: string;
+          courtId: string;
+          date: string;
+          time: string;
+          location: string;
+          courtName: string;
+          courtType: "Indoor" | "Outdoor";
+          latitude: number;
+          longitude: number;
+          playerCount: number;
+          playerLimit: number;
+          skillLevel: "Beginner" | "Intermediate" | "Advanced";
+          gameType: "Casual" | "Competitive";
+          description?: string;
+          creator_id?: string;
+          createdAt?: string;
+          updatedAt?: string;
+        };
+        Insert: Omit<Database['public']['Tables']['games']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['games']['Row']>;
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
       [_ in never]: never
     }

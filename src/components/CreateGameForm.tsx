@@ -37,6 +37,7 @@ export interface GameFormData {
   description?: string;
   location: string;
   courtName: string;
+  courtId: string;
   courtType: "Indoor" | "Outdoor";
   date: Date | undefined;
   time: string;
@@ -54,6 +55,7 @@ const CreateGameForm: React.FC<CreateGameFormProps> = ({
     description: "",
     location: "",
     courtName: "",
+    courtId: "",
     courtType: "Outdoor",
     date: undefined,
     time: "",
